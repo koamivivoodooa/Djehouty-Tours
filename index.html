@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="manifest" href="manifest.json">
+  <title>Calculatrice Djéhoutyenne – Tables de Multiplication (Cyclique Non-Binaire)</title>
+  <style>
+    :root{
+      --bg:#0b1020; --text:#eef2ff; --muted:#b7c0ff;
+      --accent:#7c3aed; --good:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      background:radial-gradient(1200px 700px at 20% 10%, #1b2a6b 0%, transparent 55%),
+                 radial-gradient(1000px 700px at 80% 20%, #3a1464 0%, transparent 55%),
+                 var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1180px;margin:0 auto;padding:18px}
+    .top{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+    .brand{
+      flex:1;min-width:280px;
+      background:linear-gradient(180deg, rgba(124,58,237,.18), rgba(255,255,255,.04));
+      border:1px solid rgba(199,210,254,.16);
+      border-radius:18px;padding:14px 14px 10px;
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
+    }
+    .brand h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .brand .sub{margin:6px 0 0;color:var(--muted);font-size:12.5px;line-height:1.35}
+    .sig{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(199,210,254,.2);color:rgba(238,242,255,.85);font-size:12px;line-height:1.35}
+    .sig strong{color:var(--text)}
+    
+    /* GRILLE RESPONSIVE */
+    .grid{display:grid;grid-template-columns: 1fr;gap:14px;}
+    @media (min-width: 981px){ .grid{grid-template-columns: 420px 1fr} }
+    
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(199,210,254,.16);
+      border-radius:18px;padding:14px;
+      box-shadow:0 18px 60px rgba(0,0,0,.30);
+    }
+    .card h2{margin:0 0 10px;font-size:14px;color:rgba(238,242,255,.92)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label{font-size:12px;color:rgba(238,242,255,.85)}
+    select,input[type="number"]{
+      background:rgba(10,16,36,.65);
+      border:1px solid rgba(199,210,254,.18);
+      color:var(--text);
+      border-radius:12px;
+      padding:9px 10px;
+      outline:none;
+      min-height: 40px; /* Amélioration tactile */
+    }
+    .btn{
+      appearance:none;border:none;cursor:pointer;
+      background:linear-gradient(180deg, rgba(124,58,237,.95), rgba(124,58,237,.70));
+      color:white;font-weight:800;
+      padding:10px 12px;border-radius:14px;
+      box-shadow:0 10px 30px rgba(124,58,237,.35);
+      font-size:13px;
+      min-height: 40px;
+    }
+    .btn.secondary{
+      background:linear-gradient(180deg, rgba(59,130,246,.9), rgba(59,130,246,.65));
+      box-shadow:0 10px 30px rgba(59,130,246,.25);
+    }
+    .btn.ghost{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(199,210,254,.2);
+      box-shadow:none;
+      font-weight:700;
+    }
+    .btn.danger{
+      background:linear-gradient(180deg, rgba(239,68,68,.92), rgba(239,68,68,.65));
+      box-shadow:0 10px 30px rgba(239,68,68,.25);
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 10px;border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(199,210,254,.16);
+      font-size:12px;color:rgba(238,242,255,.92);
+    }
+    .pill b{color:var(--text)}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width: 540px){ .split{grid-template-columns:1fr} }
+    .help{color:rgba(238,242,255,.82);font-size:12.5px;line-height:1.4}
+    
+    .canvasWrap{display:grid;grid-template-columns:1fr;gap:10px;align-items:start;}
+    .stage{
+      background:radial-gradient(800px 420px at 30% 20%, rgba(96,165,250,.15), transparent 60%),
+                 radial-gradient(700px 420px at 70% 30%, rgba(167,139,250,.14), transparent 60%),
+                 rgba(10,16,36,.45);
+      border:1px solid rgba(199,210,254,.18);
+      border-radius:18px;
+      padding:10px;
+      position:relative;
+      overflow:hidden;
+    }
+    
+    /* CANVAS FLUIDE */
+    canvas{
+      width:100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      max-height: 75vh;
+      display:block;
+    }
+
+    .legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:8px}
+    .k{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(238,242,255,.9)}
+    .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+    .dot.start{background:#22c55e}
+    .dot.step{background:#f59e0b}
+    .dot.res{background:#60a5fa}
+    .dot.path{background:#a78bfa}
+    .log{
+      background:rgba(10,16,36,.45);
+      border:1px solid rgba(199,210,254,.18);
+      border-radius:14px;
+      padding:10px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size:12px;
+      color:rgba(238,242,255,.90);
+      min-height:130px;
+      white-space:pre-wrap;
+    }
+    .reward{
+      position:absolute;inset:auto 12px 12px auto;
+      background:rgba(34,197,94,.16);
+      border:1px solid rgba(34,197,94,.30);
+      border-radius:16px;
+      padding:10px 12px;
+      display:none;
+      z-index: 10;
+      animation: pop .35s ease-out;
+      box-shadow:0 18px 50px rgba(0,0,0,.35);
+    }
+    .reward.show{display:block}
+    @keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+    .stars{letter-spacing:3px;color:#fde68a;font-size:18px;margin-top:2px}
+    .muted{color:rgba(238,242,255,.72)}
+    .tiny{font-size:11px;color:rgba(238,242,255,.70)}
+    .footerNote{margin-top:10px;color:rgba(238,242,255,.72);font-size:11.5px;line-height:1.35}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <h1>CALCULATRICE DJÉHOUTYENNE CYCLIQUE NON BINAIRE — Tables de multiplication</h1>
+        <div class="sub">
+          Ici, <b>multiplier</b> devient un mouvement : on fait <b>des pas identiques</b> sur un cercle (un cycle).
+          Les tables ne sont plus une récitation : elles deviennent un <b>chemin visible</b>.
+        </div>
+        <div class="sig">
+          <strong>Ordinateur Djéhoutyen®</strong> – marque protégée <strong>INPI</strong><br/>
+          Inventeur : <strong>Dodji Mahouignito Djéhouty OLOU</strong><br/>
+          © 2026 — Gratuit pour usage personnel et pédagogique, revente interdite.
+        </div>
+      </div>
+
+      <div class="card" style="min-width:280px;max-width:360px">
+        <h2>🎯 Objectif (en 10 secondes)</h2>
+        <div class="help">
+          Choisis une table (ex : <b>3</b>), choisis combien de fois (ex : <b>4</b>),
+          clique <b>Compiler</b> puis <b>Exécuter</b> : tu verras <b>4 sauts de 3 pas</b>.
+        </div>
+        <div class="footerNote">
+          Astuce : mets <b>N</b> à 10, 12, 20 ou 24 (cycles familiers : doigts, heures, minutes…).
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>🧩 Réglages</h2>
+
+        <div class="row" style="margin-bottom:10px">
+          <label for="soundToggle" class="pill" style="cursor:pointer">
+            <input id="soundToggle" type="checkbox" checked style="transform:translateY(1px)"/> 🔊 Son
+          </label>
+          <span class="pill">Mode : <b id="modeName">Apprendre</b></span>
+          <button class="btn ghost" id="modeLearn">Apprendre</button>
+          <button class="btn ghost" id="modeChallenge">Défis</button>
+          <button class="btn ghost" id="modeClass">Classe</button>
+        </div>
+
+        <div class="row" style="margin-bottom:12px">
+          <span class="pill">Difficulté : <b id="diffName">Normal</b></span>
+          <button class="btn ghost" id="diffEasy">Facile</button>
+          <button class="btn ghost" id="diffNormal">Normal</button>
+          <button class="btn ghost" id="diffHard">Difficile</button>
+        </div>
+
+        <div class="split" style="margin-bottom:10px">
+          <div>
+            <label>Nombre d’états (N) — illimité</label><br/>
+            <input id="N" type="number" min="2" value="10" style="width:100%"/>
+            <div class="tiny">N peut être grand. Les graduations s’adaptent.</div>
+          </div>
+          <div>
+            <label>Table (pas) : k</label><br/>
+            <select id="k" style="width:100%">
+              <option value="2">Table de 2</option><option value="3">Table de 3</option><option value="4">Table de 4</option>
+              <option value="5">Table de 5</option><option value="6">Table de 6</option><option value="7">Table de 7</option>
+              <option value="8">Table de 8</option><option value="9">Table de 9</option><option value="10">Table de 10</option>
+            </select>
+            <div class="tiny">Chaque saut = avancer de <b>k</b> pas.</div>
+          </div>
+        </div>
+
+        <div class="split" style="margin-bottom:10px">
+          <div>
+            <label>Combien de fois ? : m</label><br/>
+            <input id="m" type="number" min="0" value="4" style="width:100%"/>
+            <div class="tiny">Multiplication : <b>k × m</b> = <b>m</b> sauts de <b>k</b> pas.</div>
+          </div>
+          <div>
+            <label>Départ (position sur le cercle)</label><br/>
+            <input id="start" type="number" value="0" style="width:100%"/>
+            <div class="tiny">Souvent 0 pour apprendre les tables.</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom:10px">
+          <button class="btn secondary" id="compileBtn">Compiler</button>
+          <button class="btn" id="runBtn">Exécuter</button>
+          <button class="btn ghost" id="stepBtn">+1 saut</button>
+          <button class="btn danger" id="resetBtn">Réinitialiser</button>
+        </div>
+
+        <div class="row" style="margin-bottom:10px">
+          <span class="pill">Résultat cyclique : <b id="cycRes">—</b></span>
+          <span class="pill">Résultat classique : <b id="linRes">—</b></span>
+        </div>
+
+        <div class="help">
+          <b>Cyclique</b> = où l’on arrive sur le cercle (modulo N).<br/>
+          <b>Classique</b> = k×m (sans cercle).<br/>
+          Tu apprends en voyant les sauts.
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(199,210,254,.14);margin:14px 0"/>
+
+        <h2>🏆 Défis & classe</h2>
+        <div class="help" id="challengeText">Défis : une cible à atteindre. Classe : score + séries.</div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn ghost" id="newChallenge">Nouveau défi</button>
+          <span class="pill">Objectif : <b id="target">—</b></span>
+          <span class="pill">Score : <b id="score">0</b></span>
+          <span class="pill">Série : <b id="streak">0</b></span>
+        </div>
+      </div>
+
+      <div class="canvasWrap">
+        <div class="stage">
+          <div class="reward" id="rewardBox">
+            <div style="font-weight:900">Bravo ! 🎉</div>
+            <div class="muted" id="rewardMsg">Tour complet atteint !</div>
+            <div class="stars" id="rewardStars">★ ★ ★</div>
+          </div>
+          <canvas id="c"></canvas>
+          <div class="legend">
+            <div class="k"><span class="dot start"></span> Départ (valeur 1)</div>
+            <div class="k"><span class="dot step"></span> Pas k (valeur 2 / instruction)</div>
+            <div class="k"><span class="dot res"></span> Résultat</div>
+            <div class="k"><span class="dot path"></span> Trajet (sauts)</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🧾 Trace</h2>
+          <div class="row" style="margin-bottom:10px">
+            <button class="btn ghost" id="clearTrace">Effacer la trace</button>
+            <button class="btn secondary" id="exportTrace">Exporter la trace (.txt)</button>
+          </div>
+          <div class="log" id="log"></div>
+          <div class="footerNote">
+            Tour complet : quand on fait vraiment <b>tous les pas</b> d’affilée, dans le même sens, et qu’on revient au départ.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const ui = {
+    N: document.getElementById('N'),
+    k: document.getElementById('k'),
+    m: document.getElementById('m'),
+    start: document.getElementById('start'),
+    compileBtn: document.getElementById('compileBtn'),
+    runBtn: document.getElementById('runBtn'),
+    stepBtn: document.getElementById('stepBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    cycRes: document.getElementById('cycRes'),
+    linRes: document.getElementById('linRes'),
+    log: document.getElementById('log'),
+    clearTrace: document.getElementById('clearTrace'),
+    exportTrace: document.getElementById('exportTrace'),
+    sound: document.getElementById('soundToggle'),
+    modeName: document.getElementById('modeName'),
+    diffName: document.getElementById('diffName'),
+    modeLearn: document.getElementById('modeLearn'),
+    modeChallenge: document.getElementById('modeChallenge'),
+    modeClass: document.getElementById('modeClass'),
+    diffEasy: document.getElementById('diffEasy'),
+    diffNormal: document.getElementById('diffNormal'),
+    diffHard: document.getElementById('diffHard'),
+    newChallenge: document.getElementById('newChallenge'),
+    target: document.getElementById('target'),
+    score: document.getElementById('score'),
+    streak: document.getElementById('streak'),
+    rewardBox: document.getElementById('rewardBox'),
+    rewardMsg: document.getElementById('rewardMsg'),
+    rewardStars: document.getElementById('rewardStars'),
+    challengeText: document.getElementById('challengeText'),
+  };
+
+  const speechOK = 'speechSynthesis' in window;
+  function speak(text){
+    if(!ui.sound.checked) return;
+    if(!speechOK) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'fr-FR';
+      u.rate = 1.02;
+      u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  function dprFix(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  window.addEventListener('resize', () => { dprFix(); draw(); });
+
+  const state = {
+    mode: 'learn',
+    difficulty: 'normal',
+    compiled: null,
+    currentStep: 0,
+    position: 0,
+    path: [],
+    animating: false,
+    target: null,
+    score: 0,
+    streak: 0,
+    blinkHalf: 0,
+  };
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a||0; }
+
+
+  const clampInt = (v, def) => {
+    const x = Number(v);
+    if(!Number.isFinite(x)) return def;
+    return Math.trunc(x);
+  };
+  const mod = (a,n) => ((a%n)+n)%n;
+
+  function normalizeInputs(){
+    const N = Math.max(2, clampInt(ui.N.value, 10));
+    ui.N.value = String(N);
+    const k = Math.max(0, clampInt(ui.k.value, 2));
+    const m = Math.max(0, clampInt(ui.m.value, 0));
+    const start = clampInt(ui.start.value, 0);
+    ui.start.value = String(start);
+    return {N,k,m,start};
+  }
+
+  function logLine(s){
+    const prev = ui.log.textContent.trimEnd();
+    ui.log.textContent = (prev ? prev + "\n" : "") + s;
+    ui.log.scrollTop = ui.log.scrollHeight;
+  }
+
+  function exportTrace(){
+    const text = ui.log.textContent || "(trace vide)";
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "trace_tables_djehoutyenne.txt";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
+  function reward(msg, stars=3){
+    ui.rewardMsg.textContent = msg;
+    ui.rewardStars.textContent = "★ ".repeat(Math.max(1,stars)).trim();
+    ui.rewardBox.classList.remove('show');
+    void ui.rewardBox.offsetWidth;
+    ui.rewardBox.classList.add('show');
+    setTimeout(()=>ui.rewardBox.classList.remove('show'), 1400);
+  }
+
+  function setMode(mode){
+    state.mode = mode;
+    ui.modeName.textContent = mode === 'learn' ? 'Apprendre' : mode === 'challenge' ? 'Défis' : 'Classe';
+    if(mode!=='learn' && state.target===null) newChallenge();
+  }
+  function setDifficulty(d){
+    state.difficulty = d;
+    ui.diffName.textContent = d==='easy' ? 'Facile' : d==='hard' ? 'Difficile' : 'Normal';
+    if(state.mode!=='learn') newChallenge();
+  }
+
+  function compile(){
+    const {N,k,m,start} = normalizeInputs();
+    const startPos = mod(start, N);
+    const step = mod(k, N);
+    const lin = k * m;
+    const cyc = mod(startPos + step * m, N);
+
+    const g = (step===0)? N : gcd(N, step);
+    const jumpsPerTour = (step===0)? 1 : (N / g);
+    const toursPlan = Math.floor(m / jumpsPerTour);
+    const extraJumps = m % jumpsPerTour;
+    const extraMove = (extraJumps * step) % N;
+    state.compiled = {N,k,m,start,startPos,step,lin,cyc,g,jumpsPerTour,toursPlan,extraJumps,extraMove};
+    state.currentStep = 0;
+    state.position = startPos;
+    state.path = [startPos];
+    state.blinkHalf = 0;
+
+    ui.cycRes.textContent = String(cyc);
+    ui.linRes.textContent = String(lin);
+
+    ui.log.textContent = "";
+    logLine("=== Compilation Djéhoutyenne (Tables) ===");
+    logLine(`N : ${N}`);
+    logLine(`Départ (anneau) : ${startPos}  | saisi : ${start}`);
+    logLine(`Pas (table k) : ${k}  | pas sur l’anneau : ${step}`);
+    logLine(`Nombre de sauts (m) : ${m}`);
+    logLine(`Tours (cycle complet) : ${toursPlan} tour(s) = ${toursPlan*jumpsPerTour} saut(s) de ${step}`);
+    logLine(`Déplacements supplémentaires : +${extraJumps} saut(s) de ${step}  → +${extraMove} sur l’anneau`);
+    logLine(`Résultat classique : ${k} × ${m} = ${lin}`);
+    logLine(`Résultat cyclique : ${cyc}`);
+    logLine("----------------------------------------");
+
+    speak("Compilation prête !");
+    draw();
+  }
+
+  function stepOnce(){
+    if(!state.compiled) compile();
+    const C = state.compiled;
+    if(state.currentStep >= C.m){ speak("C'est fini !"); return; }
+
+    const prev = state.position;
+    const next = mod(prev + C.step, C.N);
+
+    state.position = next;
+    state.currentStep += 1;
+    state.path.push(next);
+
+    if(next === C.startPos && state.currentStep > 0){
+      reward("Tour complet !", 3);
+      speak("Bravo ! Tour complet !");
+      logLine("✅ Tour complet : retour au départ.");
+    }else{
+      speak("Avance !");
+    }
+
+    const half = Math.floor(C.N/2);
+    const dist = mod(next - C.startPos, C.N);
+    if(dist === half && C.N >= 4) state.blinkHalf = 18;
+
+    logLine(`Saut ${state.currentStep}/${C.m} : +${C.k} → position ${next}`);
+    if(state.mode!=='learn') checkChallenge();
+    draw();
+  }
+
+  async function run(){
+    if(state.animating) return;
+    if(!state.compiled) compile();
+    const C = state.compiled;
+    if(state.currentStep >= C.m){ speak("Déjà terminé !"); return; }
+
+    state.animating = true;
+    ui.runBtn.disabled = true;
+    ui.stepBtn.disabled = true;
+
+    speak("On exécute !");
+    const delay = state.difficulty==='easy' ? 520 : state.difficulty==='hard' ? 260 : 380;
+
+    while(state.currentStep < C.m){
+      stepOnce();
+      await new Promise(r=>setTimeout(r, delay));
+    }
+    speak("Terminé !");
+    if(state.mode!=='learn') checkChallenge(true);
+    state.animating = false;
+    ui.runBtn.disabled = false;
+    ui.stepBtn.disabled = false;
+  }
+
+  function resetAll(){
+    state.compiled = null;
+    state.currentStep = 0;
+    state.position = 0;
+    state.path = [];
+    state.blinkHalf = 0;
+    ui.cycRes.textContent = "—";
+    ui.linRes.textContent = "—";
+    ui.log.textContent = "";
+    draw();
+  }
+
+  function chooseTarget(N,k){
+    const ranges = {
+      easy:   {mMin:1, mMax:4},
+      normal: {mMin:2, mMax:8},
+      hard:   {mMin:4, mMax:14},
+    }[state.difficulty];
+    const m = Math.floor(Math.random()*(ranges.mMax-ranges.mMin+1)) + ranges.mMin;
+    const start = mod(clampInt(ui.start.value,0), N);
+    const target = mod(start + mod(k,N)*m, N);
+    return {m,target};
+  }
+
+  function newChallenge(){
+    const {N,k} = normalizeInputs();
+    const info = chooseTarget(N,k);
+    state.target = info.target;
+    ui.target.textContent = String(state.target);
+    ui.m.value = String(info.m);
+    compile();
+    logLine(`🎯 Défi : atteins ${state.target} (table de ${k}).`);
+    speak("Nouveau défi !");
+  }
+
+  function checkChallenge(final=false){
+    if(state.mode==='learn' || state.target===null || !state.compiled) return;
+    const C = state.compiled;
+    if(state.position === state.target && state.currentStep === C.m){
+      speak("Super ! Bravo !");
+      reward("Défi réussi !", state.difficulty==='hard'?5:state.difficulty==='easy'?3:4);
+      const pts = state.difficulty==='hard'?3:state.difficulty==='easy'?1:2;
+      state.score += pts;
+      state.streak += 1;
+      ui.score.textContent = String(state.score);
+      ui.streak.textContent = String(state.streak);
+      logLine(`🏆 Défi réussi ! +${pts} points.`);
+      setTimeout(()=>{ speak("Nouveau défi"); newChallenge(); }, 500);
+    } else if(final && state.currentStep === C.m){
+      speak("On réessaie !");
+      state.streak = 0;
+      ui.streak.textContent = String(state.streak);
+      logLine("❗ Défi non atteint. Réessaie.");
+    }
+  }
+
+  function polar(cx,cy,r,ang){ return {x: cx + r*Math.cos(ang), y: cy + r*Math.sin(ang)}; }
+
+  function draw(){
+    dprFix();
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    ctx.clearRect(0,0,w,h);
+
+    const {N} = normalizeInputs();
+    const cx = w*0.5, cy = h*0.5;
+    const R  = Math.min(w,h)*0.38;
+
+    // ring
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(199,210,254,0.85)";
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+
+    // ticks
+    const tickLen = 12;
+    ctx.strokeStyle = "rgba(147,197,253,0.95)";
+    ctx.lineWidth = 2;
+    ctx.font = "12px system-ui";
+    ctx.fillStyle = "rgba(238,242,255,0.90)";
+    for(let i=0;i<N;i++){
+      const ang = -Math.PI/2 + (i/N)*Math.PI*2;
+      const p1 = polar(cx,cy,R-tickLen, ang);
+      const p2 = polar(cx,cy,R+tickLen, ang);
+      ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+      const show = (N<=16) ? true : (i%(Math.ceil(N/16))===0);
+      if(show){
+        const pl = polar(cx,cy,R+tickLen+18, ang);
+        ctx.fillText(String(i), pl.x-4, pl.y+4);
+      }
+    }
+
+    // path
+    const path = state.path || [];
+    if(path.length>1){
+      ctx.strokeStyle = "rgba(167,139,250,0.75)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      path.forEach((pos, idx)=>{
+        const ang = -Math.PI/2 + (pos/N)*Math.PI*2;
+        const p = polar(cx,cy,R, ang);
+        if(idx===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+      });
+      ctx.stroke();
+    }
+
+    // markers
+    const startPos = mod(clampInt(ui.start.value,0), N);
+    const stepPos = mod(clampInt(ui.k.value,2), N);
+    const resultPos = state.compiled ? state.compiled.cyc : startPos;
+
+    function marker(pos, color, radius){
+      const ang = -Math.PI/2 + (pos/N)*Math.PI*2;
+      const p = polar(cx,cy,R, ang);
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(p.x,p.y,radius,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle="rgba(15,23,42,0.8)";
+      ctx.lineWidth=2; ctx.stroke();
+    }
+    marker(startPos, "#22c55e", 10);
+    marker(stepPos, "#f59e0b", 9);
+    marker(resultPos, "#60a5fa", 10);
+
+    // moving animal (purple)
+    const cur = state.compiled ? state.position : startPos;
+    const ang = -Math.PI/2 + (cur/N)*Math.PI*2;
+    const p = polar(cx,cy,R, ang);
+    ctx.fillStyle = "#a78bfa";
+    ctx.beginPath(); ctx.arc(p.x,p.y,12,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = "rgba(10,16,36,0.85)";
+    ctx.beginPath(); ctx.arc(p.x-4,p.y-2,2.2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x+4,p.y-2,2.2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y+4,3.2,0,Math.PI*2); ctx.fill();
+
+    // center text (Adapté à la taille du canvas)
+    const k = clampInt(ui.k.value,2);
+    const m = clampInt(ui.m.value,0);
+    const lin = k*m;
+    const fontSizeMain = Math.max(12, Math.min(18, w*0.04));
+    const fontSizeSub = Math.max(10, Math.min(13, w*0.03));
+    
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(238,242,255,0.92)";
+    ctx.font = `800 ${fontSizeMain}px system-ui`;
+    ctx.fillText(`Table de ${k} × ${m}`, cx, cy - 5);
+    
+    ctx.font = `600 ${fontSizeSub}px system-ui`;
+    ctx.fillStyle = "rgba(238,242,255,0.85)";
+    const cyc = state.compiled ? state.compiled.cyc : resultPos;
+    ctx.fillText(`Anneau : ${cyc} | Classique : ${lin}`, cx, cy + 18);
+    
+    if(state.compiled){
+      const doneTours = Math.floor(state.currentStep / state.compiled.jumpsPerTour);
+      const doneExtra = state.currentStep % state.compiled.jumpsPerTour;
+      const planTours = state.compiled.toursPlan;
+      const planExtra = state.compiled.extraJumps;
+      ctx.font = `600 ${fontSizeSub-1}px system-ui`;
+      ctx.fillStyle = "rgba(203,213,225,0.95)";
+      ctx.fillText(`Tours : ${doneTours}/${planTours} | + sauts : ${doneExtra}/${planExtra}`, cx, cy + 36);
+    }
+    ctx.textAlign = "left"; // reset
+
+    // half tour blink
+    if(state.blinkHalf>0){
+      state.blinkHalf -= 1;
+      ctx.strokeStyle = "rgba(253,230,138,0.95)";
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(cx,cy,R+20,0,Math.PI*2); ctx.stroke();
+      ctx.font = "800 14px system-ui";
+      ctx.fillStyle = "rgba(253,230,138,0.95)";
+      ctx.fillText("Demi-tour !", cx-36, cy-42);
+    }
+  }
+
+  // Wiring
+  ui.compileBtn.addEventListener('click', compile);
+  ui.runBtn.addEventListener('click', run);
+  ui.stepBtn.addEventListener('click', stepOnce);
+  ui.resetBtn.addEventListener('click', resetAll);
+  ui.clearTrace.addEventListener('click', ()=>{ ui.log.textContent=""; speak("Trace effacée"); });
+  ui.exportTrace.addEventListener('click', exportTrace);
+
+  ui.modeLearn.addEventListener('click', ()=>setMode('learn'));
+  ui.modeChallenge.addEventListener('click', ()=>setMode('challenge'));
+  ui.modeClass.addEventListener('click', ()=>setMode('class'));
+
+  ui.diffEasy.addEventListener('click', ()=>setDifficulty('easy'));
+  ui.diffNormal.addEventListener('click', ()=>setDifficulty('normal'));
+  ui.diffHard.addEventListener('click', ()=>setDifficulty('hard'));
+
+  ui.newChallenge.addEventListener('click', newChallenge);
+
+  [ui.N,ui.k,ui.m,ui.start].forEach(el=>{
+    el.addEventListener('change', ()=>{ if(state.compiled) compile(); else draw(); });
+    el.addEventListener('input', ()=>{ if(!state.compiled) draw(); });
+  });
+
+  setMode('learn');
+  setDifficulty('normal');
+  dprFix();
+  draw();
+})();
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+  let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Empêche Chrome d'afficher la bannière par défaut trop vite
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Ici, tu peux faire apparaître un bouton "Installer l'App" dans ton UI
+  console.log("L'application est prête à être installée.");
+});
+
+// Fonction à appeler quand l'utilisateur clique sur ton bouton d'installation
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('L’utilisateur a installé l’app');
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+</script>
+</body>
+</html>
