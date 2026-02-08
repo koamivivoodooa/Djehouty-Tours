@@ -1,4 +1,4 @@
-# 🌀 Calculatrice Djehouty Tours
+# 🌀 Calculatrice Djéhoutuenne - Djehouty Tours
 
 **Djehouty Tours** est une application web interactive qui transforme l'apprentissage des tables de multiplication en une expérience visuelle et sensorielle. Ici, multiplier n'est plus une récitation, mais un cheminement géométrique sur un cycle.
 
